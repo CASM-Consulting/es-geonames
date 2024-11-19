@@ -1,6 +1,7 @@
 from elasticsearch import Elasticsearch, helpers
 import csv
 import sys
+import argparse
 from datetime import datetime
 from tqdm import tqdm
 import time
@@ -8,8 +9,6 @@ from textacy.preprocessing.remove import accents as remove_accents
 
 #csv.field_size_limit(sys.maxsize)
 csv.field_size_limit()
-es = Elasticsearch(urls='http://localhost:9200/', timeout=60, max_retries=2)
-
 
 def iso_convert(iso2c):
     """
@@ -187,8 +186,13 @@ def documents(reader, adm1_dict, adm2_dict, expand_ascii=True):
     print('Exception count:', count)
 
 
-
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--url', help='Elasticsearch host', default='http://localhost:9200/')
+    args = parser.parse_args()
+
+    es = Elasticsearch(urls=args.host, timeout=60, max_retries=2)
+
     t = time.time()
     adm1_dict = read_adm1()
     adm2_dict = read_adm2()
@@ -199,4 +203,3 @@ if __name__ == "__main__":
     es.indices.refresh(index='geonames')
     e = (time.time() - t) / 60
     print("Elapsed minutes: ", e)
-
