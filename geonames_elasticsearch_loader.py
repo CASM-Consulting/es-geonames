@@ -191,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument('--url', help='Elasticsearch host', default='http://localhost:9200/')
     args = parser.parse_args()
 
-    es = Elasticsearch(urls=args.host, timeout=60, max_retries=2)
+    es = Elasticsearch(urls=args.url, timeout=60, max_retries=2)
 
     t = time.time()
     adm1_dict = read_adm1()
