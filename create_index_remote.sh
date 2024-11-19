@@ -1,7 +1,14 @@
-echo "Starting Docker container and data volume..."
-# create the directory first to avoid permission issues when Docker is running as root
-mkdir $PWD/geonames_index/
-docker run -d -p 127.0.0.1:9200:9200 -e "discovery.type=single-node" -v $PWD/geonames_index/:/usr/share/elasticsearch/data elasticsearch:7.10.1 
+#!/bin/bash
+
+# Check if the remote Elasticsearch host is provided as an argument
+if [ -z "$1" ]; then
+  echo "Usage: $0 <REMOTE_ELASTICSEARCH_HOST>"
+  exit 1
+fi
+
+REMOTE_ELASTICSEARCH_URL=$1
+
+echo "Assuming remote Elasticsearch container is running at $REMOTE_ELASTICSEARCH_URL..."
 
 echo "Downloading Geonames gazetteer..."
 wget https://download.geonames.org/export/dump/allCountries.zip
@@ -11,10 +18,10 @@ echo "Unpacking Geonames gazetteer..."
 unzip allCountries.zip
 
 echo "Creating mappings for the fields in the Geonames index..."
-curl -XPUT 'localhost:9200/geonames' -H 'Content-Type: application/json' -d @geonames_mapping.json
+curl -XPUT "http://$REMOTE_ELASTICSEARCH_URL/geonames" -H 'Content-Type: application/json' -d @geonames_mapping.json
 
 echo "Change disk availability limits..."
-curl -X PUT "localhost:9200/_cluster/settings" -H 'Content-Type: application/json' -d'
+curl -X PUT "http://$REMOTE_ELASTICSEARCH_URL/_cluster/settings" -H 'Content-Type: application/json' -d'
 {
   "transient": {
     "cluster.routing.allocation.disk.watermark.low": "10gb",
@@ -26,6 +33,6 @@ curl -X PUT "localhost:9200/_cluster/settings" -H 'Content-Type: application/jso
 '
 
 echo "\nLoading gazetteer into Elasticsearch..."
-python geonames_elasticsearch_loader.py
+python geonames_elasticsearch_loader.py --url $REMOTE_ELASTICSEARCH_URL
 
 echo "Done"
